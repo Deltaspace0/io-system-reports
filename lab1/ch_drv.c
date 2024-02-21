@@ -67,9 +67,9 @@ static ssize_t my_write(struct file *f, const char __user *buf,  size_t len, lof
     counter += ascii >= 33 && ascii <= 126;
   }
 
-  sprintf(ibuf, "%d", counter);
+  sprintf(ibuf, "%d\n", counter);
 
-  printk(KERN_INFO "%d", counter);
+  printk(KERN_INFO "%d\n", counter);
   
   return len;
 }
