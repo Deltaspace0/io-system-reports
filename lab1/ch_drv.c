@@ -16,6 +16,7 @@ static struct class * cl;
 
 char ibuf[BUF_SIZE];
 
+int counter;
 
 static int my_open(struct inode *i, struct file *f)
 {
@@ -58,6 +59,17 @@ static ssize_t my_write(struct file *f, const char __user *buf,  size_t len, lof
   if (copy_from_user(ibuf, buf, len) != 0) {
       return -EFAULT;
   }
+
+  int i = 0;
+
+  for (i = 0; i < len; i++) {
+    int ascii = (int)ibuf[i];
+    counter += ascii >= 33 && ascii <= 126;
+  }
+
+  sprintf(ibuf, "%d", counter);
+
+  printk(KERN_INFO "%d", counter);
   
   return len;
 }
@@ -73,6 +85,7 @@ static struct file_operations mychdev_fops =
  
 static int __init ch_drv_init(void)
 {
+    counter = 0;
     printk(KERN_INFO "Hello!\n");
     if (alloc_chrdev_region(&first, 0, 1, "ch_dev") < 0)
 	  {
