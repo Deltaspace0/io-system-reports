@@ -6,6 +6,7 @@
 #include <linux/fs.h>
 #include <linux/device.h>
 #include <linux/cdev.h>
+#include <linux/uaccess.h>
 
 #define BUF_SIZE 256
 

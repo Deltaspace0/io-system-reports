@@ -1,0 +1,1 @@
+cmd_/media/sf_io-systems/report-skeleton/lab1/ch_drv.ko := ld -r -m elf_x86_64 -z max-page-size=0x200000 -T ./scripts/module-common.lds --build-id  -o /media/sf_io-systems/report-skeleton/lab1/ch_drv.ko /media/sf_io-systems/report-skeleton/lab1/ch_drv.o /media/sf_io-systems/report-skeleton/lab1/ch_drv.mod.o ;  true
