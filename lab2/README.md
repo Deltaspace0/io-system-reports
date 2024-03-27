@@ -47,8 +47,10 @@ sudo xxd /dev/vramdisk1 | head -n 5
 
 ## Примеры использования
 
-[images/screenshot1.jpg](images/screenshot1.png)
+![images/screenshot1.jpg](images/screenshot1.png)
 
-[images/screenshot2.jpg](images/screenshot2.png)
+![images/screenshot2.jpg](images/screenshot2.png)
 
-[images/screenshot3.jpg](images/screenshot3.png)
+![images/screenshot3.jpg](images/screenshot3.png)
+
+![images/screenshot4.jpg](images/screenshot4.png)
