@@ -1,8 +1,8 @@
 #include <linux/module.h>
-#include <linux/fs.h>		
-#include <linux/errno.h>	
-#include <linux/types.h>	
-#include <linux/fcntl.h>	
+#include <linux/fs.h>
+#include <linux/errno.h>
+#include <linux/types.h>
+#include <linux/fcntl.h>
 #include <linux/vmalloc.h>
 #include <linux/genhd.h>
 #include <linux/blkdev.h>
@@ -11,15 +11,15 @@
 
 
 #define MEMSIZE 0x19000 // Size of Ram disk in sectors
-int c = 0; //Variable for Major Number 
+int c = 0; //Variable for Major Number
 
 #define SECTOR_SIZE 512
 #define MBR_SIZE SECTOR_SIZE
 #define MBR_DISK_SIGNATURE_OFFSET 440
 #define MBR_DISK_SIGNATURE_SIZE 4
 #define PARTITION_TABLE_OFFSET 446
-#define PARTITION_ENTRY_SIZE 16 
-#define PARTITION_TABLE_SIZE 64 
+#define PARTITION_ENTRY_SIZE 16
+#define PARTITION_TABLE_SIZE 64
 #define MBR_SIGNATURE_OFFSET 510
 #define MBR_SIGNATURE_SIZE 2
 #define MBR_SIGNATURE 0xAA55
@@ -122,7 +122,7 @@ static const PartTable def_log_part_table[] =
 			end_head: 0xB,
 			end_sec: 0x20,
 			end_cyl: 0x9F,
-			abs_start_sec: 0x1,
+			abs_start_sec: 0x5001,
 			sec_in_part: 0x9FFF
 		}
 	}
@@ -154,7 +154,7 @@ void copy_mbr_n_br(u8 *disk)
 	}
 }
 /* Structure associated with Block device*/
-struct mydiskdrive_dev 
+struct mydiskdrive_dev
 {
 	int size;
 	u8 *data;
@@ -166,7 +166,7 @@ struct mydiskdrive_dev
 
 struct mydiskdrive_dev *x;
 
-static int my_open(struct block_device *x, fmode_t mode)	 
+static int my_open(struct block_device *x, fmode_t mode)
 {
 	int ret=0;
 	printk(KERN_INFO "mydiskdrive : open \n");
@@ -193,7 +193,7 @@ int mydisk_init(void)
 	/* Setup its partition table */
 	copy_mbr_n_br(device.data);
 
-	return MEMSIZE;	
+	return MEMSIZE;
 }
 
 static int rb_transfer(struct request *req)
@@ -213,6 +213,7 @@ static int rb_transfer(struct request *req)
 	unsigned int sectors;
 	u8 *buffer;
 	sector_offset = 0;
+
 	rq_for_each_segment(bv, req, iter)
 	{
 		buffer = page_address(BV_PAGE(bv)) + BV_OFFSET(bv);
@@ -226,24 +227,27 @@ static int rb_transfer(struct request *req)
 		Buffer: %p; Length: %u sectors\n",\
 		(unsigned long long)(start_sector), (unsigned long long) \
 		(sector_offset), buffer, sectors);
-		
+
 		if (dir == WRITE) /* Write to the device */
 		{
-			unsigned int i;
-			for (i = 0; i < sectors * SECTOR_SIZE; i++) {
-				buffer[i] = buffer[i] * buffer[i];
-			}
-			memcpy((device.data)+((start_sector+sector_offset)*SECTOR_SIZE)\
-			,buffer,sectors*SECTOR_SIZE);		
+			long num_buffer;
+			if (kstrtol(buffer, 8, &num_buffer) == 0) {
+			        long result = num_buffer * num_buffer;
+			        char result_str[16];
+			        snprintf(result_str, sizeof(result_str), "%ld", result);
+			        memcpy((device.data) + (start_sector + sector_offset) * SECTOR_SIZE, result_str, strlen(result_str) + 1);
+	    		}
+			//memcpy((device.data)+((start_sector+sector_offset)*SECTOR_SIZE)\
+			//,buffer,sectors*SECTOR_SIZE);
 		}
 		else /* Read from the device */
 		{
 			memcpy(buffer,(device.data)+((start_sector+sector_offset)\
-			*SECTOR_SIZE),sectors*SECTOR_SIZE);	
+			*SECTOR_SIZE),sectors*SECTOR_SIZE);
 		}
 		sector_offset += sectors;
 	}
-	
+
 	if (sector_offset != sector_cnt)
 	{
 		printk(KERN_ERR "mydisk: bio info doesn't match with the request info");
@@ -256,7 +260,7 @@ static void dev_request(struct request_queue *q)
 {
 	struct request *req;
 	int error;
-	while ((req = blk_fetch_request(q)) != NULL) /*check active request 
+	while ((req = blk_fetch_request(q)) != NULL) /*check active request
 						      *for data transfer*/
 	{
 	error=rb_transfer(req);// transfer the request for operation
@@ -270,10 +274,10 @@ void device_setup(void)
 	c = register_blkdev(c, "mydisk");// major no. allocation
 	printk(KERN_ALERT "Major Number is : %d",c);
 	spin_lock_init(&device.lock); // lock for queue
-	device.queue = blk_init_queue( dev_request, &device.lock); 
+	device.queue = blk_init_queue( dev_request, &device.lock);
 
 	device.gd = alloc_disk(8); // gendisk allocation
-	
+
 	(device.gd)->major=c; // major no to gendisk
 	device.gd->first_minor=0; // first minor of gendisk
 
@@ -281,17 +285,17 @@ void device_setup(void)
 	device.gd->private_data = &device;
 	device.gd->queue = device.queue;
 	device.size= mydisk_init();
-	printk(KERN_INFO"THIS IS DEVICE SIZE %d",device.size);	
+	printk(KERN_INFO"THIS IS DEVICE SIZE %d",device.size);
 	sprintf(((device.gd)->disk_name), "mydisk");
-	set_capacity(device.gd, device.size);  
+	set_capacity(device.gd, device.size);
 	add_disk(device.gd);
 }
 
 static int __init mydiskdrive_init(void)
-{	
+{
 	int ret=0;
 	device_setup();
-	
+
 	return ret;
 }
 
@@ -301,12 +305,12 @@ void mydisk_cleanup(void)
 }
 
 void __exit mydiskdrive_exit(void)
-{	
+{
 	del_gendisk(device.gd);
 	put_disk(device.gd);
 	blk_cleanup_queue(device.queue);
 	unregister_blkdev(c, "mydisk");
-	mydisk_cleanup();	
+	mydisk_cleanup();
 }
 
 module_init(mydiskdrive_init);
